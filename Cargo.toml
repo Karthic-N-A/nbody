@@ -1,0 +1,19 @@
+[package]
+name = "nbody"
+version = "0.1.0"
+edition = "2021"
+
+[features]
+optimize = ["log/release_max_level_warn"]
+default = ["optimize"]
+
+[dependencies]
+byteorder = "1"
+glam = "*"
+env_logger = "0.10"
+error-iter = "0.4"
+log = "0.4"
+pixels = "*"
+winit = {version="0.29", features = ["rwh_05"]}
+winit_input_helper = "0.15"
+rand = "*"
