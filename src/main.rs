@@ -13,10 +13,11 @@ use rand::distributions::{Distribution,Uniform};
 
 const WIDTH: u32 = 512;
 const HEIGHT: u32 = 512;
-const N: usize = 1000;
-const GRAV: f32 = 1e2/N as f32; // G const
+const N: usize = 50_000;
+const GRAV: f32 = 1.; // gravitation constant
 const THETA: f32 = 0.6; // Parameter affected both quality and speed. Too high, quality is low, too low fps is low
-const SOFTENING: f32 = 10.;
+const SOFTENING: f32 = 10.; // softening parameter based on wikipedia article on nbody
+const M: f32 = 1e4; // mass of central body
 
 #[derive(Clone,Copy)]
 struct Particle {
@@ -66,6 +67,7 @@ fn main() -> Result<(), Error> {
     let mut rng = rand::thread_rng();
     let uradius = Uniform::from(20.0..100.);
     let utheta = Uniform::from(-std::f32::consts::PI..std::f32::consts::PI);
+    let mut now = std::time::Instant::now();
     let window = {
         let size = LogicalSize::new(WIDTH as f64, HEIGHT as f64);
         WindowBuilder::new()
@@ -78,12 +80,12 @@ fn main() -> Result<(), Error> {
     // Boilerplate for pixels and winit setup
 
     let mut particles : Vec<Particle> = Vec::new();
-    particles.push(Particle{mass:1e3, r:Vec2{x: (WIDTH/2) as f32, y:(HEIGHT/2) as f32}, ..Default::default()});
+    particles.push(Particle{mass:M, r:Vec2{x: (WIDTH/2) as f32, y:(HEIGHT/2) as f32}, ..Default::default()});
     // Make N random particles spread around center
     for _ in 1..=N{
         let r = uradius.sample(&mut rng);
         let t = utheta.sample(&mut rng);
-        let v = (GRAV*1e3/r).sqrt();
+        let v = (GRAV*M/r).sqrt();
         particles.push(Particle {
             mass: 1.,
             r: Vec2 {
@@ -182,6 +184,8 @@ fn main() -> Result<(), Error> {
 
             for i in 0..particles.len(){
                 calculate_field(&root, i, &mut particles);
+            }
+            for i in 0..particles.len(){
                 // using particles[i].v = particles[i].field*dt returns an error, telling to use a
                 // local variable, so instead handle each field
                 if !particles[i].first_iter{
@@ -199,6 +203,8 @@ fn main() -> Result<(), Error> {
                 particles[i].r.x += particles[i].v.x * dt + particles[i].field.x/2. * dt * dt;
                 particles[i].r.y += particles[i].v.y * dt + particles[i].field.y/2. * dt * dt;
             }
+            println!("{}", now.elapsed().as_secs_f32().recip());
+            now = std::time::Instant::now();
 
 
             window.request_redraw();
