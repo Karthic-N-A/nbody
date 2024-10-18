@@ -13,9 +13,9 @@ use rand::distributions::{Distribution,Uniform};
 
 const WIDTH: u32 = 512;
 const HEIGHT: u32 = 512;
-const N: usize = 50_000;
+const N: usize = 5_000;
 const GRAV: f32 = 1.; // gravitation constant
-const THETA: f32 = 0.6; // Parameter affected both quality and speed. Too high, quality is low, too low fps is low
+const THETA: f32 = 0.4; // Parameter affected both quality and speed. Too high, quality is low, too low fps is low
 const SOFTENING: f32 = 10.; // softening parameter based on wikipedia article on nbody
 const M: f32 = 1e4; // mass of central body
 
@@ -65,9 +65,8 @@ fn main() -> Result<(), Error> {
     let event_loop = EventLoop::new().unwrap();
     let mut input = WinitInputHelper::new();
     let mut rng = rand::thread_rng();
-    let uradius = Uniform::from(20.0..100.);
+    let uradius = Uniform::from(30.0..100.);
     let utheta = Uniform::from(-std::f32::consts::PI..std::f32::consts::PI);
-    let mut now = std::time::Instant::now();
     let window = {
         let size = LogicalSize::new(WIDTH as f64, HEIGHT as f64);
         WindowBuilder::new()
@@ -110,6 +109,7 @@ fn main() -> Result<(), Error> {
         let surface_texture = SurfaceTexture::new(window_size.width, window_size.height, &window);
         Pixels::new(WIDTH, HEIGHT, surface_texture)?
     };
+    pixels.enable_vsync(false);
 
     let res = event_loop.run(move |event, elwt| {
         // Draw the current frame
@@ -131,7 +131,7 @@ fn main() -> Result<(), Error> {
                         0.0..1. => 1.,
                         e => 1./e,
                     };
-                    let rgba = [(255.*(1.-d)) as u8 , 40, (255.*(d)) as u8, 0xff];
+                    let rgba = [(255.*(1.-d)) as u8 , 255* (d.exp()*(255.*d).cos()).clamp(0., 255.) as u8 as u8, (255.*(d)) as u8, 0xff];
                     frame[4 * i..(4 * i) + 4].copy_from_slice(&rgba);
                 }
             }
@@ -203,8 +203,6 @@ fn main() -> Result<(), Error> {
                 particles[i].r.x += particles[i].v.x * dt + particles[i].field.x/2. * dt * dt;
                 particles[i].r.y += particles[i].v.y * dt + particles[i].field.y/2. * dt * dt;
             }
-            println!("{}", now.elapsed().as_secs_f32().recip());
-            now = std::time::Instant::now();
 
 
             window.request_redraw();
