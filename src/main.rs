@@ -16,7 +16,7 @@ const HEIGHT: u32 = 512;
 const N: usize = 5_000;
 const GRAV: f32 = 1.; // gravitation constant
 const THETA: f32 = 0.4; // Parameter affected both quality and speed. Too high, quality is low, too low fps is low
-const SOFTENING: f32 = 10.; // softening parameter based on wikipedia article on nbody
+const SOFTENING: f32 = 8.; // softening parameter based on wikipedia article on nbody
 const M: f32 = 1e4; // mass of central body
 
 #[derive(Clone,Copy)]
@@ -120,6 +120,7 @@ fn main() -> Result<(), Error> {
         {
             let frame = pixels.frame_mut();
             frame.fill(0);
+            let k = 0.06;
             for p in &particles {
                 let x = p.r.x as u32;
                 let y = p.r.y as u32;
@@ -127,11 +128,13 @@ fn main() -> Result<(), Error> {
                 if 0 < x && x < WIDTH && 0 < y && y < HEIGHT {
                     let i = (WIDTH * y + x) as usize;
                     // transition from blue to red based on magnitude of velocity
-                    let d:f32 = match p.v.length(){
-                        0.0..1. => 1.,
-                        e => 1./e,
-                    };
-                    let rgba = [(255.*(1.-d)) as u8 , 255* (d.exp()*(255.*d).cos()).clamp(0., 255.) as u8 as u8, (255.*(d)) as u8, 0xff];
+                    let t:f32 = 1. - 1./(1.+k*p.v.length());
+                    let rgba = [
+                        (73.*t + 131.) as u8,
+                        (-129.*t + 165.) as u8,
+                        (-123.*t + 152.) as u8,
+                        0xff,
+                    ];
                     frame[4 * i..(4 * i) + 4].copy_from_slice(&rgba);
                 }
             }
